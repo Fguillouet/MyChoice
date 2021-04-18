@@ -8,7 +8,6 @@
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 PURPLE='\033[0;35m'
-YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 #Déclaration des variables
@@ -17,30 +16,7 @@ NORMAL='\e[0m'
 DATE=$(date '+%Y-%m-%d')
 
 #Définition des fonctions
-fonction_prerequis_scan() {
-    #Vérifier si Nmap et Xsltproc sont installé
-    dpkg -s nmap &>/dev/null
-    echo ""
-    echo -e "${BOLD}Etat des paquets à installer : "
-    echo ""
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}Nmap est installé !!!${NC}"
-    else
-        echo -e "${RED}Nmap n'est pas installé !!!${NC}"
-        sudo apt install nmap -y &>/dev/null
-    fi
-
-    dpkg -s xsltproc &>/dev/null
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}xsltproc est installé !!!${NC}"
-    else
-        echo -e "${RED}xsltproc n'est pas installé !!!${NC}"
-        sudo apt install xsltproc -y &>/dev/null
-    fi
-}
-
-fonction_menu() {
-
+fonction_banner() {
     echo -e "${BOLD} __  ____     __   _____ _    _  ____ _____ _____ ______ ${NORMAL}"
     echo -e "${BOLD}|  \/  \ \   / /  / ____| |  | |/ __ \_   _/ ____|  ____|${NORMAL}"
     echo -e "${BOLD}| \  / |\ \_/ /  | |    | |__| | |  | || || |    | |__   ${NORMAL}"
@@ -49,12 +25,83 @@ fonction_menu() {
     echo -e "${BOLD}|_|  |_|  |_|     \_____|_|  |_|\____/_____\_____|______|${NORMAL}"
     echo ""
     echo ""
+}
+fonction_prerequis_scan() {
+    #Vérifier si Nmap et Xsltproc sont installé
+    dpkg -s nmap &>/dev/null
+    echo ""
+    echo -e "${BOLD}Etat des paquets à installer : ${NORMAL}"
+    echo ""
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}${BOLD}Nmap est installé !!!${NC}${NORMAL}"
+    else
+        echo -e "${RED}${BOLD}Nmap n'est pas installé !!!${NC}${NORMAL}"
+        sudo apt install nmap -y &>/dev/null
+    fi
 
-    echo -e "Pentest d'une IP ou d'un domaine               [1]"
-    echo -e "Pentest de mon réseau                          [2]"
-    echo -e "Scan de l'arborescence d'un site web avec Dirb [3]"
-    echo -e "Quitter                                        [4]"
-    read -p "Votre choix : " choix
+    dpkg -s xsltproc &>/dev/null
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}${BOLD}xsltproc est installé !!!${NC}${NORMAL}"
+    else
+        echo -e "${RED}${BOLD}xsltproc n'est pas installé !!!${NC}${NORMAL}"
+        sudo apt install xsltproc -y &>/dev/null
+    fi
+}
+
+fonction_prerequis_arborescence_site() {
+    #Vérifier si le paquet Dirb est installé
+    dpkg -s dirb &>/dev/null
+    echo ""
+    echo -e "${BOLD}Etat du paquets Dirb : ${NC}${NORMAL}"
+    echo ""
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}${BOLD}Dirb est installé !!!${NC}${NORMAL}"
+    else
+        echo -e "${RED}${BOLD}Dirb n'est pas installé !!!${NC}${NORMAL}"
+        sudo apt install nmap -y &>/dev/null
+    fi
+}
+
+fonction_mise_a_jour_des_paquets() {
+
+    echo -e "${BOLD}Installer les paquets nécessaire à ce script [1]${NORMAL}"
+    echo -e "${BOLD}Mettre a jour touts les paquets              [2]${NORMAL}"
+    echo ""
+    read -p "$(echo -e "${BOLD}Votre choix : ${NORMAL}")" maj
+
+    case $maj in
+    1)
+        #Vérification de la présence des paquets sur la machine
+        fonction_prerequis_arborescence_site
+        fonction_prerequis_scan
+        ;;
+    2)
+        #Mise a jour des paquets
+        echo ""
+        echo -e "${BOLD}Début de la mise à jour des paquets${NORMAL}"
+        apt update && apt upgrade -y
+        echo ""
+        echo -e "${BOLD}Fin de la mise à jour des paquets${NORMAL}"
+        ;;
+    3)
+        echo ""
+        echo -e "${BOLD}Merci d'avoir utilisé ce script${NORMAL}"
+        exit
+        ;;
+    esac
+    echo ""
+}
+
+fonction_menu() {
+    fonction_banner
+
+    echo -e "${BOLD}Pentest d'une IP ou d'un domaine               [1]${NORMAL}"
+    echo -e "${BOLD}Pentest de mon réseau                          [2]${NORMAL}"
+    echo -e "${BOLD}Scan de l'arborescence d'un site web avec Dirb [3]${NORMAL}"
+    echo -e "${BOLD}Mise a jours des paquets                       [4]${NORMAL}"
+    echo -e "${BOLD}Quitter                                        [5]${NORMAL}"
+    echo ""
+    read -p "$(echo -e "${BOLD}Votre choix : ${NORMAL}")" choix
     case $choix in
     1)
         fonction_prerequis_scan
@@ -77,32 +124,19 @@ fonction_menu() {
         ;;
     4)
         echo ""
+        echo -e "${BOLD}L'option 4 à été sélectionnée, Les paquets utilisé dans ce script vont être installé / mis à jour !!!${NORMAL}"
+        echo ""
+        fonction_mise_a_jour_des_paquets
+        ;;
+    5)
+        echo ""
         echo -e "${BOLD}Merci d'avoir utilisé ce script${NORMAL}"
         exit
         ;;
     esac
 }
-fonction_progress_bar() {
-    dico_count=$(cat dictionnary/dictionnary.txt | wc -l)
-    for pc in $(seq 1 $dico_count); do
-        echo -ne "$pc / $dico_count\r"
-        sleep 1
-    done
-}
 
 fonction_arborescence_site() {
-    #Vérifier si le paquet Dirb est installé
-    dpkg -s dirb &>/dev/null
-    echo ""
-    echo -e "${BOLD}Etat du paquets Dirb : ${NC}"
-    echo ""
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}Dirb est installé !!!${NC}"
-    else
-        echo -e "${RED}Dirb n'est pas installé !!!${NC}"
-        sudo apt install nmap -y &>/dev/null
-    fi
-
     #Execution de Dirb
     mkdir Dirb &>/dev/null
     mkdir Dirb/dictionnary
@@ -157,8 +191,8 @@ fonction_scan_network() {
     done
 
     #Resultat
-    echo -e "Tout les rapports sont stockés dans ""$(pwd)""/pentest/date/"
-    echo -e "Tout les rapports en version ""${BOLD}HTML "$(pwd)"/pentest/date/"
+    echo -e "${BOLD}Tout les rapports sont stockés dans ""$(pwd)""/pentest/$DATE/${NORMAL}"
+    echo -e "${BOLD}Tout les rapports en version ""${BOLD}HTML "$(pwd)"/pentest/$DATE/${NORMAL}"
     echo ""
     echo -e "${RED}${BOLD}/ATTENTION\ - TOUT LES FICHIERS CREE AVEC CE SCRIPT ONT ETE CREE AVEC L'UTILISATEUR ROOT POUR TRAITER LES FICHIER FAITE UN CHMOD SUR LES FICHIERS"
     echo ""
@@ -209,16 +243,16 @@ fonction_scan_ip_domain() {
 if [ $(whoami) = "root" ]; then
     clear
     fonction_menu
-    read -p "$(echo -e "Souhaitez vous retouner au menu principal ? [y/n]   ")" reset
+    read -p "$(echo -e "${BOLD}Souhaitez vous retouner au menu principal ? [y/n]   ${NORMAL}")" reset
     if [ $(echo $reset) == y ]; then
         while [ $(echo $reset) == y ]; do
             clear
             fonction_menu
-            read -p "$(echo -e "Souhaitez vous retouner au menu principal ? [y/n]   ")" reset
+            read -p "$(echo -e "${BOLD}Souhaitez vous retouner au menu principal ? [y/n]   ${NORMAL}")" reset
         done
     fi
     echo ""
-    echo -e "${BOLD}Merci d'avoir utilisé ce script"
+    echo -e "${BOLD}Merci d'avoir utilisé ce script${NORMAL}"
 else
     echo -e "${RED}${BOLD}Merci d'utiliser la commande sudo pour exécuter ce script"
 fi
